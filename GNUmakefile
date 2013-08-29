@@ -3,7 +3,7 @@ Default: all
 TOP=../../..
 
 ifndef JAVA_HOME
-    JAVA_HOME=$(TOP)/tools/jdk160_26
+    JAVA_HOME=$(TOP)/tools/jdk1.6.0_26
 endif
 
 ifeq (Windows, $(findstring Windows,$(OS)))
@@ -36,16 +36,23 @@ CLASS_FILES:=$(foreach class, $(CLASSES), $(BUILD)/$(subst .,/,$(class)).class)
 PACKAGES=$(sort $(basename $(CLASSES)))
 PACKAGEDIRS=$(subst .,/,$(PACKAGES))
 
-all: classes
+DDPLIST=dd-plist.jar
 
-dd-plist.jar: classes
+all: $(DDPLIST)
+
+$(DDPLIST): classes
 	$(JAR) cvf $@ -C $(BUILD)/ .
 
 javadocs:
 	mkdir -p $(DOCS)
 	$(JAVA_HOME)/bin/javadoc -d $(DOCS) -classpath $(CLASSPATH) $(PACKAGES)
 
+install: $(DDPLIST)
+	cp $< $(TOP)/repositories/jOVAL/components/plugin/rsrc/lib
+	cp $< $(TOP)/repositories/jOVAL-Commercial/components/provider/rsrc/lib
+
 clean:
+	rm -f $(DDPLIST)
 	rm -rf $(BUILD)
 
 classes: classdirs $(CLASS_FILES)
