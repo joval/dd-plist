@@ -12,4 +12,4 @@ CLASSES=\
 	com.dd.plist.NSString \
 	com.dd.plist.PropertyListParser \
 	com.dd.plist.UID \
-	com.dd.plist.XMLPropertyListParser \
+	com.dd.plist.XMLPropertyListParser

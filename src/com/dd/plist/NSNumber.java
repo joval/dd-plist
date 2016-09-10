@@ -153,7 +153,7 @@ public class NSNumber extends NSObject {
 
     /**
      * The number's boolean value.
-     * @return <code>true</code> if the value is true or non-zero, false</code> otherwise.
+     * @return <code>true</code> if the value is true or non-zero, <code>false</code> otherwise.
      */
     public boolean boolValue() {
         if(type==BOOLEAN)

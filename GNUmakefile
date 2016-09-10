@@ -1,9 +1,9 @@
 Default: all
 
-TOP=../../..
+TOP=$(realpath .)
 
 ifndef JAVA_HOME
-    JAVA_HOME=$(TOP)/tools/jdk1.6.0_26
+    $(error "Please set the JAVA_HOME environment variable.")
 endif
 
 ifeq (Windows, $(findstring Windows,$(OS)))
