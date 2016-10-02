@@ -48,8 +48,8 @@ javadocs:
 	$(JAVA_HOME)/bin/javadoc -d $(DOCS) -classpath $(CLASSPATH) $(PACKAGES)
 
 install: $(DDPLIST)
-	cp $< $(TOP)/repositories/jOVAL/components/plugin/rsrc/lib
-	cp $< $(TOP)/repositories/jOVAL-Commercial/components/provider/rsrc/lib
+	cp $< $(TOP)/../jOVAL-Commercial/components/plugin/rsrc/lib
+	cp $< $(TOP)/../jOVAL-Commercial/components/provider/offline/rsrc/lib
 
 clean:
 	rm -f $(DDPLIST)

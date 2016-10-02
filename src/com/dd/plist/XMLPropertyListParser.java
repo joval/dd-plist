@@ -152,7 +152,11 @@ public class XMLPropertyListParser {
 	    for (int i = 0; i < children.size(); i += 2) {
 		Node key = children.get(i);
 		Node val = children.get(i+1);
-		dict.put(key.getChildNodes().item(0).getNodeValue(), parseObject(val));
+		if (key.getChildNodes().getLength() == 0) {
+		    dict.put("", parseObject(val)); // <key></key> case
+		} else {
+		    dict.put(key.getChildNodes().item(0).getNodeValue(), parseObject(val));
+		}
             }
             return dict;
         } else if (type.equals("array")) {
