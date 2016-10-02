@@ -39,20 +39,48 @@ import org.xml.sax.InputSource;
 /**
  * Parses XML property lists
  * @author Daniel Dreibrodt
+ * @author David A. Solin
  */
 public class XMLPropertyListParser {
-
-    private static DocumentBuilderFactory docBuilderFactory = null;
+    private static final DocumentBuilderFactory FACTORY = DocumentBuilderFactory.newInstance();
+    static {
+	try {
+            FACTORY.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+            Float v1_7 = new Float("1.7");
+            Float javaVersion = new Float(System.getProperty("java.specification.version"));
+            if (javaVersion.compareTo(v1_7) >= 0) {
+                FACTORY.setFeature("http://xml.org/sax/features/external-general-entities", false);
+                FACTORY.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            }
+            FACTORY.setXIncludeAware(false);
+            FACTORY.setExpandEntityReferences(false);
+            FACTORY.setNamespaceAware(false);
+            FACTORY.setIgnoringComments(true);
+	    FACTORY.setCoalescing(true);
+	    FACTORY.setValidating(false);
+	} catch (ParserConfigurationException e) {
+	    throw new RuntimeException(e);
+	}
+    }
 
     /**
-     * Initialize the document builder factory so that it can be reuused and does not need to
-     * be reinitialized for each new parsing.
-     * @throws ParserConfigurationException If the parser configuration is not supported on your system.
+     * Resolves only the Apple PLIST DTD.
      */
-    private static synchronized void initDocBuilderFactory() throws ParserConfigurationException {
-        docBuilderFactory = DocumentBuilderFactory.newInstance();
-        docBuilderFactory.setIgnoringComments(true);
-	docBuilderFactory.setCoalescing(true);
+    static class PlistResolver implements EntityResolver {
+	private static final String PLIST_SYSTEMID_1 = "-//Apple Computer//DTD PLIST 1.0//EN";
+	private static final String PLIST_SYSTEMID_2 = "-//Apple//DTD PLIST 1.0//EN";
+
+        PlistResolver() {
+        }
+
+        // Implement EntityResolver
+
+        public InputSource resolveEntity(String publicId, String systemId) {
+            if (PLIST_SYSTEMID_1.equals(publicId) || PLIST_SYSTEMID_2.equals(publicId)) {
+                return new InputSource(XMLPropertyListParser.class.getResourceAsStream("PropertyList-1.0.dtd"));
+            }
+            return null;
+        }
     }
 
     /**
@@ -60,22 +88,10 @@ public class XMLPropertyListParser {
      * As DocumentBuilders are not thread-safe a new DocBuilder is generated for each request.
      * @return A new DocBuilder that can parse property lists w/o an internet connection.
      */
-    private static synchronized DocumentBuilder getDocBuilder() throws ParserConfigurationException {
-        if(docBuilderFactory==null)
-            initDocBuilderFactory();
-        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
-	docBuilder.setEntityResolver(new EntityResolver() {
-		public InputSource resolveEntity(String publicId, String systemId) {
-		    if ("-//Apple Computer//DTD PLIST 1.0//EN".equals(publicId) || // older publicId
-			"-//Apple//DTD PLIST 1.0//EN".equals(publicId)) { // newer publicId
-			// return a dummy, zero length DTD so we don't have to fetch
-			// it from the network.
-			return new InputSource(new ByteArrayInputStream(new byte[0]));
-		    }
-		    return null;
-		}
-	    });
-        return docBuilder;
+    public static synchronized DocumentBuilder getDocBuilder() throws ParserConfigurationException {
+        DocumentBuilder builder = FACTORY.newDocumentBuilder();
+	builder.setEntityResolver(new PlistResolver());
+        return builder;
     }
 
     /**
@@ -85,11 +101,7 @@ public class XMLPropertyListParser {
      * @throws Exception
      */
     public static NSObject parse(File f) throws Exception {
-        DocumentBuilder docBuilder = getDocBuilder();
-
-        Document doc = docBuilder.parse(f);
-
-        return parseDocument(doc);
+        return parseDocument(getDocBuilder().parse(f));
     }
 
     /**
@@ -99,8 +111,7 @@ public class XMLPropertyListParser {
      * @throws Exception
      */
     public static NSObject parse(final byte[] bytes) throws Exception {
-        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
-        return parse(bis);
+        return parse(new ByteArrayInputStream(bytes));
     }
 
     /**
@@ -110,11 +121,7 @@ public class XMLPropertyListParser {
      * @throws Exception
      */
     public static NSObject parse(InputStream is) throws Exception {
-        DocumentBuilder docBuilder = getDocBuilder();
-
-        Document doc = docBuilder.parse(is);
-
-        return parseDocument(doc);
+        return parseDocument(getDocBuilder().parse(is));
     }
 
     private static NSObject parseDocument(Document doc) throws Exception {
@@ -124,10 +131,11 @@ public class XMLPropertyListParser {
 
         //Skip all #TEXT nodes and take the first element node we find as root
         List<Node> rootNodes = filterElementNodes(doc.getDocumentElement().getChildNodes());
-        if(rootNodes.size() > 0)
+        if (rootNodes.size() > 0) {
             return parseObject(rootNodes.get(0));
-        else
+        } else {
             throw new Exception("No root node found!");
+	}
     }
 
     /**

@@ -40,7 +40,7 @@ DDPLIST=dd-plist.jar
 
 all: $(DDPLIST)
 
-$(DDPLIST): classes
+$(DDPLIST): classes resources
 	$(JAR) cvf $@ -C $(BUILD)/ .
 
 javadocs:
@@ -54,6 +54,9 @@ install: $(DDPLIST)
 clean:
 	rm -f $(DDPLIST)
 	rm -rf $(BUILD)
+
+resources:
+	cp $(SRC)/com/dd/plist/PropertyList-1.0.dtd $(BUILD)/com/dd/plist
 
 classes: classdirs $(CLASS_FILES)
 
